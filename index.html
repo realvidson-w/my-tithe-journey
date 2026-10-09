@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Tithe Journey — Worship Flames Ecclesia</title>
+<style>
+:root{--ink:#17202a;--muted:#68727d;--gold:#b8892d;--cream:#faf7ef;--white:#fff;--line:#e6e1d6;--green:#2f7658}
+*{box-sizing:border-box} body{margin:0;background:#f2efe7;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:480px;margin:auto;min-height:100vh;background:var(--cream)}
+header{padding:28px 22px 22px;background:linear-gradient(145deg,#1a2521,#30443a);color:#fff;border-radius:0 0 28px 28px}
+.brand{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;opacity:.8}.title{font-size:29px;font-weight:750;margin:7px 0}.sub{opacity:.75;font-size:14px}
+.wrap{padding:18px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 18px #00000008}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}.amount{font-size:28px;font-weight:750;margin-top:5px}
+.progress{height:8px;background:#eee9de;border-radius:99px;margin-top:12px;overflow:hidden}.bar{height:100%;width:0;background:var(--gold)}
+button{border:0;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer;background:#1f3029;color:#fff}button.secondary{background:#eee9de;color:var(--ink)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.day{padding:13px;border:1px solid var(--line);border-radius:14px;background:#fff}.day strong{display:block;font-size:13px}.day small{color:var(--muted)}.done{border-color:#a9d0bd;background:#f1faf5}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:15px}
+.form{display:grid;gap:10px}.history{max-height:220px;overflow:auto}.entry{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0}.entry:last-child{border:0}.tiny{font-size:12px;color:var(--muted)}
+nav{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px}.navbtn{background:transparent;color:var(--muted);padding:9px 4px;font-size:11px}.navbtn.active{color:var(--green)}
+.notice{background:#fff8df;border:1px solid #ead59a;border-radius:14px;padding:13px;font-size:13px}
+h2{font-size:18px;margin:0 0 12px} .hide{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">Worship Flames Ecclesia</div>
+  <div class="title">My Tithe Journey</div>
+  <div class="sub" id="yearLabel"></div>
+</header>
+
+<main class="wrap">
+<section id="calendar" class="page">
+  <div class="card">
+    <div class="row"><div><div class="label">This week</div><div id="weekLabel" style="font-weight:750;margin-top:4px"></div></div><button onclick="showPage('record')">Record Tithe</button></div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 id="monthLabel"></h2><select id="monthSelect" style="width:130px" onchange="renderCalendar()"></select></div>
+    <div id="days" class="grid"></div>
+  </div>
+  <div class="notice">🔔 Weekly reminder: “Remember your tithe this week. Honour the Lord with your substance.” — Proverbs 3:9</div>
+</section>
+
+<section id="record" class="page hide">
+  <div class="card">
+    <h2>Record a Tithe</h2>
+    <div class="form">
+      <label class="tiny">Amount (₦)<input id="amount" type="number" min="0" placeholder="e.g. 10000"></label>
+      <label class="tiny">Date<input id="date" type="date"></label>
+      <label class="tiny">Note (optional)<input id="note" placeholder="Sunday tithe"></label>
+      <button onclick="saveTithe()">Save Tithe</button>
+    </div>
+  </div>
+</section>
+
+<section id="giving" class="page hide">
+  <div class="card"><div class="label">Total this year</div><div class="amount" id="yearTotal">₦0</div><div class="progress"><div class="bar" id="bar"></div></div></div>
+  <div class="card"><h2>Giving History</h2><div id="history" class="history"></div></div>
+</section>
+
+<section id="reminders" class="page hide">
+  <div class="card">
+    <h2>Weekly Reminder</h2>
+    <p class="tiny">Choose a day and time. Your browser can notify you when reminders are enabled.</p>
+    <div class="form">
+      <label class="tiny">Day<select id="remDay"><option>Sunday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></label>
+      <label class="tiny">Time<input id="remTime" type="time" value="09:00"></label>
+      <button onclick="enableReminder()">Enable Reminder</button>
+      <div id="remStatus" class="tiny"></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav>
+<button class="navbtn active" onclick="showPage('calendar',this)">📅<br>Calendar</button>
+<button class="navbtn" onclick="showPage('record',this)">💰<br>Record</button>
+<button class="navbtn" onclick="showPage('giving',this)">📊<br>Giving</button>
+<button class="navbtn" onclick="showPage('reminders',this)">🔔<br>Reminders</button>
+</nav>
+</div>
+
+<script>
+const now=new Date(), year=now.getFullYear();
+let entries=JSON.parse(localStorage.getItem('titheEntries')||'[]');
+document.getElementById('yearLabel').textContent=year+' • Yearly Giving Calendar';
+document.getElementById('date').valueAsDate=now;
+const ms=document.getElementById('monthSelect');
+for(let i=0;i<12;i++){let o=document.createElement('option');o.value=i;o.textContent=new Date(year,i,1).toLocaleString('en',{month:'long'});ms.appendChild(o)}
+ms.value=now.getMonth();
+
+function weekRange(d){let x=new Date(d);let day=x.getDay();let start=new Date(x);start.setDate(x.getDate()-day);let end=new Date(start);end.setDate(start.getDate()+6);return [start,end]}
+function fmt(d){return d.toLocaleDateString('en',{month:'short',day:'numeric'})}
+function renderCalendar(){
+ const m=+ms.value; document.getElementById('monthLabel').textContent=new Date(year,m,1).toLocaleString('en',{month:'long'});
+ const [ws,we]=weekRange(now); document.getElementById('weekLabel').textContent=fmt(ws)+' – '+fmt(we);
+ const days=document.getElementById('days'); days.innerHTML='';
+ const last=new Date(year,m+1,0).getDate();
+ for(let d=1;d<=last;d++){let dt=new Date(year,m,d), key=dt.toISOString().slice(0,10), done=entries.some(e=>e.date===key);
+ let el=document.createElement('div');el.className='day '+(done?'done':'');
+ el.innerHTML='<strong>'+dt.toLocaleString('en',{weekday:'short'})+' · '+d+'</strong><small>'+dt.toLocaleString('en',{month:'short'})+'</small><br><small>'+(done?'✓ Tithe recorded':'Tithe not recorded')+'</small>';days.appendChild(el)}
+}
+function saveTithe(){
+ let amount=Number(document.getElementById('amount').value),date=document.getElementById('date').value,note=document.getElementById('note').value.trim();
+ if(!amount||!date){alert('Please enter an amount and date.');return}
+ entries.push({amount,date,note});localStorage.setItem('titheEntries',JSON.stringify(entries));
+ document.getElementById('amount').value='';document.getElementById('note').value='';
+ updateGiving();ms.value=new Date(date).getMonth();renderCalendar();showPage('giving');
+}
+function updateGiving(){
+ let total=entries.filter(e=>e.date.startsWith(year+'-')).reduce((s,e)=>s+e.amount,0);
+ document.getElementById('yearTotal').textContent='₦'+total.toLocaleString();
+ document.getElementById('bar').style.width=Math.min(total/1000000*100,100)+'%';
+ let h=document.getElementById('history');h.innerHTML=entries.slice().reverse().map(e=>'<div class="entry"><span>'+e.date+(e.note?'<br><span class="tiny">'+e.note+'</span>':'')+'</span><strong>₦'+e.amount.toLocaleString()+'</strong></div>').join('')||'<div class="tiny">No tithe recorded yet.</div>';
+}
+function showPage(id,btn){
+ document.querySelectorAll('.page').forEach(x=>x.classList.add('hide'));document.getElementById(id).classList.remove('hide');
+ document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');
+ updateGiving();
+}
+async function enableReminder(){
+ if(!('Notification' in window)){document.getElementById('remStatus').textContent='This browser does not support notifications.';return}
+ let p=await Notification.requestPermission();
+ document.getElementById('remStatus').textContent=p==='granted'?'Reminders enabled. Keep this app installed/openable for browser-based notifications.':'Notification permission was not granted.';
+ localStorage.setItem('reminder',JSON.stringify({day:document.getElementById('remDay').value,time:document.getElementById('remTime').value}));
+}
+renderCalendar();updateGiving();
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
+</body>
+</html>
