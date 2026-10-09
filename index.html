@@ -36,7 +36,14 @@ h2{font-size:18px;margin:0 0 12px} .hide{display:none}
     <div class="row"><div><div class="label">This week</div><div id="weekLabel" style="font-weight:750;margin-top:4px"></div></div><button onclick="showPage('record')">Record Tithe</button></div>
   </div>
   <div class="card">
-    <div class="row"><h2 id="monthLabel"></h2><select id="monthSelect" style="width:130px" onchange="renderCalendar()"></select></div>
+    <div class="row">
+  <button class="secondary" onclick="changeYear(-1)">Previous Year</button>
+  <button class="secondary" onclick="changeYear(1)">Next Year</button>
+</div>
+<div class="row">
+  <h2 id="monthLabel"></h2>
+  <select id="monthSelect" style="width:130px" onchange="renderCalendar()"></select>
+</div>
     <div id="days" class="grid"></div>
   </div>
   <div class="notice">🔔 Weekly reminder: “Remember your tithe this week. Honour the Lord with your substance.” — Proverbs 3:9</div>
